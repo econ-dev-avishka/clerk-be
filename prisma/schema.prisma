@@ -7,21 +7,41 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  clerkUserId String?  @unique @map("clerk_user_id")
-  email       String   @unique
-  firstName   String?  @map("first_name")
-  lastName    String?  @map("last_name")
-  role        UserRole @default(CUSTOMER)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model AppUser {
+  id                  String        @id @default(uuid()) @db.Uuid
+  email               String        @unique
+  userType            UserType      @map("user_type")
+  deactivatedAt       DateTime?     @map("deactivated_at")
+  onboardingCompleted Boolean       @default(false) @map("onboarding_completed")
+  lastSignInAt        DateTime?     @map("last_sign_in_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
 
-  @@map("users")
+  identities          UserIdentity[]
+
+  @@map("app_users")
 }
 
-enum UserRole {
-  ADMIN
-  STAFF
+model UserIdentity {
+  id         String       @id @default(uuid()) @db.Uuid
+  appUserId  String       @map("app_user_id") @db.Uuid
+  provider   AuthProvider
+  subjectId  String       @map("subject_id")
+  verifiedAt DateTime?    @map("verified_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  appUser    AppUser      @relation(fields: [appUserId], references: [id])
+
+  @@unique([provider, subjectId])
+  @@map("user_identities")
+}
+
+enum UserType {
   CUSTOMER
+  STAFF
+}
+
+enum AuthProvider {
+  CLERK
+  BANKID
 }
