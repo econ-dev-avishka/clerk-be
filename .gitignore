@@ -37,3 +37,6 @@ npm-debug.log*
 
 #Ai Tools
 CLAUDE.md
+.qodo/
+
+/generated/prisma

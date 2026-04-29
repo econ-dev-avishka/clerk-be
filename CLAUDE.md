@@ -351,8 +351,65 @@ Examples:
 - commit-msg: commitlint - enforces type(BE-N): description format, scope is required
 - Never skip hooks. If a hook fails, fix the underlying issue.
 
-### Code comments
+### Code documentation standard
 
-- Default to no comments. Only add a comment when the WHY is genuinely non-obvious.
-- Never write comments that restate what the code already says.
-- Use TSDoc only on functions called from multiple places, or that throw, or have non-obvious constraints.
+**The golden rule:** If the code reads like plain English, write nothing. A comment that restates what the code already says is noise - delete it.
+
+```ts
+// WRONG - the function name already says it
+// Returns the user's full name
+function getFullName(user: User): string {
+  return `${user.firstName} ${user.lastName}`;
+}
+
+// CORRECT - no comment needed
+function getFullName(user: User): string {
+  return `${user.firstName} ${user.lastName}`;
+}
+```
+
+**When to use a plain `//` comment:** Only when the WHY behind something is not obvious from reading the code. Write it so a developer new to the codebase can understand without needing to ask anyone.
+
+```ts
+// The API returns 404 for both "not found" and "not owned by this user".
+// We treat both as null so we never accidentally leak that a resource exists.
+if (error.status === 404) return null;
+```
+
+**When to use TSDoc (`/** */`):** Add TSDoc on functions, use cases, and classes when ANY of the following are true:
+- It is called from multiple places across the codebase
+- It throws errors that callers need to handle
+- It has a constraint or business rule not visible from the type signature
+- The return value meaning is not obvious
+
+Tags to use:
+
+| Tag | When to use |
+|---|---|
+| `@param name` | When a parameter name alone does not explain its purpose or a constraint on its value |
+| `@returns` | When the return value shape or meaning needs clarification |
+| `@throws` | When the function throws and callers must handle it |
+| `@remarks` | For non-obvious constraints, invariants, or business rules a new developer must know |
+| `@example` | When the usage pattern is not obvious from the signature |
+
+Tags never to use: `@author`, `@version`, `@since`, `@todo` (open a GitHub issue instead).
+
+```ts
+/**
+ * Resolves or creates the internal User record for a verified Clerk identity.
+ *
+ * @returns The AuthUser domain model representing the resolved user.
+ * @throws {UserInactiveException} When the resolved user has been deactivated.
+ *
+ * @remarks
+ * Called on every authenticated request inside AuthGuard.
+ * This is the single place where external Clerk identities map to internal users.
+ */
+async execute(identity: VerifiedIdentity): Promise<AuthUser> { ... }
+```
+
+**Absolute rules:**
+- Never write a comment that a junior developer could figure out by reading the line below it
+- Never leave TODO comments in committed code - open a GitHub issue instead
+- Write every comment as if the reader is intelligent but completely new to this project
+- Only add a comment on a type property when its value has a constraint not obvious from the type
